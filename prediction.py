@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 
 
 def enter_mileage():
@@ -13,19 +14,19 @@ def enter_mileage():
 
 
 def train_options():
-    options = [False, False, False]
+    options = ["False", "False", "False"]
     see_data_repartition = True
     while see_data_repartition:
         see_points = input("Do you want to see the repartition "
                            "of points in a graph? (y/n)\n")
         if see_points == "y":
-            options[0] = True
+            options[0] = "True"
             see_calculated_line = True
             while see_calculated_line:
                 see_line = input("Do you want to see the line "
                                  "calculated in the regression? (y/n)\n")
                 if see_line == "y":
-                    options[1] = True
+                    options[1] = "True"
                     see_calculated_line = False
                 elif see_line == "n":
                     see_calculated_line = False
@@ -41,7 +42,7 @@ def train_options():
         see_report = input("Do you want to see a report of the algorithm "
                            "accurancy? (y/n)\n")
         if see_report == "y":
-            options[2] = True
+            options[2] = "True"
             see_algorithm_report = False
         elif see_report == "n":
             see_algorithm_report = False
@@ -56,9 +57,7 @@ def train_model():
         train = input("Do you want to train the model? (y/n)\n")
         if train == "y":
             options = train_options()
-            subprocess.run(['python', 'training.py'] + options,
-                           capture_output=True,
-                           text=True)
+            subprocess.run(['python', 'training.py'] + options)
             train_or_not = False
         elif train == "n":
             train_or_not = False
@@ -69,7 +68,7 @@ def train_model():
 def predict_price():
     print("Usage:\n\n"
           "You will be asked to enter a mileage; please enter a valid\n"
-          " number (float).\n\n"
+          "number (float).\n\n"
           "If the model has not been trained, it will default to the line\n"
           "'price = 0 * mileage + 0', resulting in a price of zero for any\n"
           "mileage. Therefore, it is highly recommended to train the model\n"
@@ -86,6 +85,20 @@ def predict_price():
     theta0 = 0.0
     theta1 = 0.0
     train_model()
+    if os.path.exists('parameters.json'):
+        try:
+            with open('parameters.json', 'r') as file:
+                data = json.load(file)
+                if 'theta0' in data and isinstance(data['theta0'],
+                                                   (int, float))\
+                    and 'theta1' in data and isinstance(data['theta1'],
+                                                        (int, float)):
+                    theta0 = float(data['theta0'])
+                    theta1 = float(data['theta1'])
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error al leer el archivo parameters.json: {e}")
+    price = theta0 + theta1 * mileage
+    print("The estimated price is: ", price)
 
 
 if __name__ == "__main__":
