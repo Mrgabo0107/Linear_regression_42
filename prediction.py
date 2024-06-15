@@ -3,18 +3,34 @@ import subprocess
 import json
 
 
-def enter_mileage():
+def enter_positive_float(message):
     while True:
         try:
-            mileage = float(input("Please insert the mileage of"
-                                  " your car (int or float value)\n"))
-            return mileage
+            value = float(input(message))
+            if value <= 0.0:
+                raise ValueError
+            return value
+        except ValueError:
+            pass
+
+
+def enter_positive_integer(message):
+    while True:
+        try:
+            value = int(input(message))
+            if value <= 0:
+                raise ValueError
+            return value
         except ValueError:
             pass
 
 
 def train_options():
-    options = ["False", "False", "False"]
+    learning_rate = enter_positive_float("Please insert the learning rate "
+                                         "(positive float)\n")
+    iterations = enter_positive_integer("Insert the number of iterations "
+                                        "for the method (positive integer)\n")
+    options = [str(learning_rate), str(iterations), "False", "False", "False"]
     see_data_repartition = True
     while see_data_repartition:
         see_points = input("Do you want to see the repartition "
@@ -81,7 +97,8 @@ def predict_price():
           "      same graph.\n"
           "    - View a report on the accuracy of the algorithm using\n"
           "      various methods applied to linear regressions.\n\n")
-    mileage = enter_mileage()
+    mileage = enter_positive_float("Please insert the mileage of"
+                                   " your car (positive int or float value)\n")
     theta0 = 0.0
     theta1 = 0.0
     train_model()
@@ -96,8 +113,8 @@ def predict_price():
                     theta0 = float(data['theta0'])
                     theta1 = float(data['theta1'])
         except (json.JSONDecodeError, IOError) as e:
-            print(f"Error al leer el archivo parameters.json: {e}")
-    price = theta0 + theta1 * mileage
+            print(f"Error reading the file parameters.json: {e}")
+    price = theta0 + (theta1 * mileage)
     print("The estimated price is: ", price)
 
 
