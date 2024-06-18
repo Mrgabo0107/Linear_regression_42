@@ -1,7 +1,23 @@
 import sys
 import json
 import csv
+import matplotlib.pyplot as plt
+import numpy as np
+import subprocess
 
+
+def plot_data_and_regression_line(data, m=None, b=None, show_line=False):
+    x = np.array([row[0] for row in data])
+    y = np.array([row[1] for row in data])
+    plt.scatter(x, y, color='blue', label="Data", s=5)
+    if show_line and m is not None and b is not None:
+        plt.plot(x, m * x + b, color='red', linewidth=1,
+                 label='Regression line')
+    plt.xlabel('Mileage')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.savefig('data_and_regression.png')
+    plt.clf() 
 
 def read_csv_file(file_path):
     data = []
@@ -10,49 +26,69 @@ def read_csv_file(file_path):
             csv_reader = csv.reader(file)
             next(csv_reader)
             for row in csv_reader:
-                data.append(row)
+                data.append([float(row[0]), float(row[1])])
     except FileNotFoundError:
-        print(f"El archivo '{file_path}' no se encontró.")
+        print(f"File '{file_path}' not found")
         return None
     return data
 
 
-def new_theta0(learning_rate, data, theta0, theta1):
+def update_thetas(learning_rate, data, theta0, theta1):
     m = len(data)
-    my_sum = 0
-    for i in range(m):
-        my_sum += theta0 + (data[i][0] * theta1) - data[i][1]
-    return (learning_rate * (my_sum / m))
+    sum_errors0 = sum(theta0 + theta1 * x - y for x, y in data)
+    sum_errors1 = sum((theta0 + theta1 * x - y) * x for x, y in data)
+    theta0 -= learning_rate * sum_errors0 / m
+    theta1 -= learning_rate * sum_errors1 / m
+    return theta0, theta1
 
 
-def new_theta1(learning_rate, data, theta0, theta1):
-    m = len(data)
-    my_sum = 0
-    for i in range(m):
-        my_sum += (theta0 + (data[i][0] * theta1) - data[i][1]) * data[i][0]
-    return (learning_rate * (my_sum) / m)
+def normalize_data(data):
+    mileage_column = np.array([row[0] for row in data])
+    price_column = np.array([row[1] for row in data])
+    minx = np.min(mileage_column)
+    maxx = np.max(mileage_column)
+    miny = np.min(price_column)
+    maxy = np.max(price_column)
+    normalized_data = []
+    for row in data:
+        normalized_data.append([(row[0] - minx) / (maxx - minx),
+                                (row[1] - miny) / (maxy - miny)])
+    return normalized_data, minx, maxx, miny, maxy
+
+
+def rescale(theta0, theta1, minx, maxx, miny, maxy):
+    theta1 = theta1 * (maxy - miny) / (maxx - minx)
+    theta0 = (theta0 * (maxy - miny)) + miny - theta1 * minx
+    return theta0, theta1
 
 
 def train(lerning_rate, iterations, see_graph, see_line, see_report):
     file_path = 'data.csv'
     data = read_csv_file(file_path)
+    if data is None:
+        return
+    normalized_data, minx, maxx, miny, maxy = normalize_data(data)
     # The method is started with theta0 and theta1 set to 0
     # because the project requires it.
     # Normally, we can choose the starting point of the method,
     # such as the number of iterations or the learning rate.
-    theta0 = 0.0
-    theta1 = 0.0
+    theta0, theta1 = 0.0, 0.0
     for _ in range(iterations):
-        theta0 = new_theta0(lerning_rate, data, theta0, theta1)
-        theta1 = new_theta1(lerning_rate, data, theta0, theta1)
+        theta0, theta1 = update_thetas(lerning_rate, normalized_data,
+                                       theta0, theta1)
+    theta0, theta1 = rescale(theta0, theta1, minx, maxx, miny, maxy)
     dic = {"theta0": theta0, "theta1": theta1}
     filename = "parameters.json"
     try:
         with open(filename, 'w') as json_file:
             json.dump(dic, json_file)
-        print(f"Archivo {filename} creado exitosamente.")
+        print(f"File {filename} created succesfully.")
     except Exception as e:
-        print(f"Ocurrió un error al crear el archivo {filename}: {e}")
+        print(f"Error creating file {filename}: {e}")
+    if see_graph:
+        plot_data_and_regression_line(data, theta1, theta0, see_line)
+    if see_report:
+        subprocess.run(['python', 'gen_report.py', file_path, str(theta0), str(theta1)])
 
 
 def set_good_boolean(str):

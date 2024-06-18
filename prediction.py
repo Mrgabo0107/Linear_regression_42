@@ -36,13 +36,13 @@ def train_options():
         see_points = input("Do you want to see the repartition "
                            "of points in a graph? (y/n)\n")
         if see_points == "y":
-            options[0] = "True"
+            options[2] = "True"
             see_calculated_line = True
             while see_calculated_line:
                 see_line = input("Do you want to see the line "
                                  "calculated in the regression? (y/n)\n")
                 if see_line == "y":
-                    options[1] = "True"
+                    options[3] = "True"
                     see_calculated_line = False
                 elif see_line == "n":
                     see_calculated_line = False
@@ -58,7 +58,7 @@ def train_options():
         see_report = input("Do you want to see a report of the algorithm "
                            "accurancy? (y/n)\n")
         if see_report == "y":
-            options[2] = "True"
+            options[4] = "True"
             see_algorithm_report = False
         elif see_report == "n":
             see_algorithm_report = False
