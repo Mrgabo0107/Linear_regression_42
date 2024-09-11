@@ -73,7 +73,7 @@ def train_model():
         train = input("Do you want to train the model? (y/n)\n")
         if train == "y":
             options = train_options()
-            subprocess.run(['python', 'training.py'] + options)
+            subprocess.run(['python3', 'training.py'] + options)
             train_or_not = False
         elif train == "n":
             train_or_not = False

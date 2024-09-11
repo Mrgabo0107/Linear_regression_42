@@ -17,18 +17,22 @@ def plot_data_and_regression_line(data, m=None, b=None, show_line=False):
     plt.ylabel('Price')
     plt.legend()
     plt.savefig('data_and_regression.png')
-    plt.clf() 
+    plt.clf()
+
 
 def read_csv_file(file_path):
     data = []
     try:
         with open(file_path, mode='r') as file:
             csv_reader = csv.reader(file)
-            next(csv_reader)
+            next(csv_reader)  # Skip header row
             for row in csv_reader:
                 data.append([float(row[0]), float(row[1])])
     except FileNotFoundError:
         print(f"File '{file_path}' not found")
+        return None
+    except ValueError:
+        print("Error: Non-numeric data found in file.")
         return None
     return data
 
@@ -62,7 +66,7 @@ def rescale(theta0, theta1, minx, maxx, miny, maxy):
     return theta0, theta1
 
 
-def train(lerning_rate, iterations, see_graph, see_line, see_report):
+def train(learning_rate, iterations, see_graph, see_line, see_report):
     file_path = 'data.csv'
     data = read_csv_file(file_path)
     if data is None:
@@ -74,7 +78,7 @@ def train(lerning_rate, iterations, see_graph, see_line, see_report):
     # such as the number of iterations or the learning rate.
     theta0, theta1 = 0.0, 0.0
     for _ in range(iterations):
-        theta0, theta1 = update_thetas(lerning_rate, normalized_data,
+        theta0, theta1 = update_thetas(learning_rate, normalized_data,
                                        theta0, theta1)
     theta0, theta1 = rescale(theta0, theta1, minx, maxx, miny, maxy)
     dic = {"theta0": theta0, "theta1": theta1}
@@ -88,10 +92,11 @@ def train(lerning_rate, iterations, see_graph, see_line, see_report):
     if see_graph:
         plot_data_and_regression_line(data, theta1, theta0, see_line)
     if see_report:
-        subprocess.run(['python', 'gen_report.py', file_path, str(theta0), str(theta1)])
+        subprocess.run(['python3', 'gen_report.py',
+                        file_path, str(theta0), str(theta1)])
 
 
-def set_good_boolean(str):
+def parse_boolean(str):
     s = str.lower()
     if s == 'true':
         return True
@@ -103,8 +108,8 @@ def set_good_boolean(str):
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python training.py <lerning rate>(positive float), \n"
-              "<interations> (positive integer), \n"
+        print("Usage: python training.py <learning rate>(positive float), \n"
+              "<iterations> (positive integer), \n"
               "<see graph of points> (True or Flase), \n"
               "<see line in the graph of points> (True or False, \n"
               "will be set to False if <see graph of points is False>), \n"
@@ -112,7 +117,7 @@ if __name__ == "__main__":
         sys.exit(1)
     else:
         try:
-            lerning_rate = float(sys.argv[1])
+            learning_rate = float(sys.argv[1])
         except ValueError:
             print("Error with the learning rate")
             sys.exit(1)
@@ -122,20 +127,20 @@ if __name__ == "__main__":
             print("Error with the number of iterations")
             sys.exit(1)
         try:
-            see_graph = set_good_boolean(sys.argv[3])
+            see_graph = parse_boolean(sys.argv[3])
         except ValueError:
             print("Error with \"see graph\" boolean")
             sys.exit(1)
         try:
-            see_line = set_good_boolean(sys.argv[4])
+            see_line = parse_boolean(sys.argv[4])
             if see_graph is False:
                 see_line = False
         except ValueError:
             print("Error with \"see line\" boolean")
             sys.exit(1)
         try:
-            see_report = set_good_boolean(sys.argv[5])
+            see_report = parse_boolean(sys.argv[5])
         except ValueError:
             print("Error with \"see accuracy repport\" boolean")
             sys.exit(1)
-    train(lerning_rate, iterations, see_graph, see_line, see_report)
+    train(learning_rate, iterations, see_graph, see_line, see_report)
