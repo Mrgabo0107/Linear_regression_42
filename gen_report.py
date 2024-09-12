@@ -2,6 +2,8 @@ import sys
 import numpy as np
 from training import read_csv_file
 
+np.seterr(over='raise', invalid='raise')
+
 
 # SSE: Sum of square errors
 # MSE: Mean of square errors
@@ -10,17 +12,26 @@ from training import read_csv_file
 # SAE: Sum of absolute errors
 # MAE: Mean of absolute errors
 def gen_report(data, theta0, theta1):
-    length = len(data)
-    SSE = sum((y - (theta0 + theta1 * x))**2 for x, y in data)
-    MSE = SSE / length
-    observed_mean = sum(y for _, y in data) / length
-    SST = sum((y - observed_mean)**2 for _, y in data)
-    determination_coef = 1 - (SSE/SST)
-    SAE = sum(np.abs(y - (theta0 + theta1 * x)) for x, y in data)
-    MAE = SAE / length
-    print('MAE: ', MAE)
-    print('RMSE: ', np.sqrt(MSE))
-    print('R^2: ', determination_coef)
+    try:
+        length = len(data)
+        SSE = sum((y - (theta0 + theta1 * x))**2 for x, y in data)
+        MSE = SSE / length
+        observed_mean = sum(y for _, y in data) / length
+        SST = sum((y - observed_mean)**2 for _, y in data)
+        determination_coef = 1 - (SSE/SST)
+        SAE = sum(np.abs(y - (theta0 + theta1 * x)) for x, y in data)
+        MAE = SAE / length
+        print('MAE: ', MAE)
+        print('RMSE: ', np.sqrt(MSE))
+        print('R^2: ', determination_coef)
+    except FloatingPointError as e:
+        print(f"Error: {e}")
+        print("Impossible to create repport")
+        sys.exit(1)
+    except OverflowError as e:
+        print(f"Error: {e}")
+        print("Impossible to create repport")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

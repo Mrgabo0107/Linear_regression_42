@@ -5,13 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 
+np.seterr(over='raise', invalid='raise')
+
 
 def plot_data_and_regression_line(data, m=None, b=None, show_line=False):
     x = np.array([row[0] for row in data])
     y = np.array([row[1] for row in data])
     plt.scatter(x, y, color='blue', label="Data", s=5)
     if show_line and m is not None and b is not None:
-        plt.plot(x, m * x + b, color='red', linewidth=1,
+        plt.plot(x, m * x + b, color='red', linewidth=0.8,
                  label='Regression line')
     plt.xlabel('Mileage')
     plt.ylabel('Price')
@@ -38,11 +40,17 @@ def read_csv_file(file_path):
 
 
 def update_thetas(learning_rate, data, theta0, theta1):
-    m = len(data)
-    sum_errors0 = sum(theta0 + theta1 * x - y for x, y in data)
-    sum_errors1 = sum((theta0 + theta1 * x - y) * x for x, y in data)
-    theta0 -= learning_rate * sum_errors0 / m
-    theta1 -= learning_rate * sum_errors1 / m
+    try:
+        m = len(data)
+        sum_errors0 = sum(theta0 + theta1 * x - y for x, y in data)
+        sum_errors1 = sum((theta0 + theta1 * x - y) * x for x, y in data)
+        theta0 -= learning_rate * sum_errors0 / m
+        theta1 -= learning_rate * sum_errors1 / m
+    except FloatingPointError as e:
+        print(f"Error: {e}")
+        print("Advice: It is recommended to use a low learning rate")
+        print("in gradient descent algorithms")
+        raise
     return theta0, theta1
 
 
@@ -78,8 +86,12 @@ def train(learning_rate, iterations, see_graph, see_line, see_report):
     # such as the number of iterations or the learning rate.
     theta0, theta1 = 0.0, 0.0
     for _ in range(iterations):
-        theta0, theta1 = update_thetas(learning_rate, normalized_data,
-                                       theta0, theta1)
+        try:
+            theta0, theta1 = update_thetas(learning_rate, normalized_data,
+                                           theta0, theta1)
+        except Exception as e:
+            print(f"fatal error: {e}")
+            sys.exit(1)
     theta0, theta1 = rescale(theta0, theta1, minx, maxx, miny, maxy)
     dic = {"theta0": theta0, "theta1": theta1}
     filename = "parameters.json"
@@ -118,6 +130,10 @@ if __name__ == "__main__":
     else:
         try:
             learning_rate = float(sys.argv[1])
+            if learning_rate >= 1:
+                print(
+                    "\033[91mAdvice:\033[0m It is advisable to use a "
+                    "learning rate smaller than one.")
         except ValueError:
             print("Error with the learning rate")
             sys.exit(1)
